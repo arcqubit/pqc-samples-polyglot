@@ -78,21 +78,65 @@ This sample repository demonstrates several real-world challenges:
 
 ## Scanning with PQC Scanner
 
-```bash
-# Scan entire polyglot repository
-cargo run --example scan_directory -- \
-  --path samples/polyglot-app/ \
-  --output reports/polyglot-app-report.json
+The [CryptoScan workflow](.github/workflows/cryptoscan.yml), adapted from
+`reality-copy`, runs the bundled Linux amd64 scanner on Ubuntu 24.04. It scans
+the repository, including `frontend`, `backend`, `microservices`, `lib-crypto`,
+and `legacy-service`, without building or installing the sample applications.
+The scanner tools, workflow helpers, and comparison checkout are excluded.
+The Linux executable's SHA-256 checksum is verified before each run.
 
-# Scan by language
-cargo run --example scan_directory -- \
-  --path samples/polyglot-app/frontend/ \
-  --output reports/frontend-report.json
+It runs on relevant pushes to `main` and pull requests targeting `main`.
+For a manual scan, open **Actions → CryptoScan → Run workflow** in GitHub.
 
-cargo run --example scan_directory -- \
-  --path samples/polyglot-app/backend/ \
-  --output reports/backend-report.json
+Each run provides:
+
+- An Actions summary with severity counts, source links, and expandable findings.
+- Up to ten source warning annotations for high-confidence findings at medium
+  severity or above. When a baseline exists, only new findings are annotated.
+- One updating summary comment on same-repository pull requests. Fork PRs still
+  receive Actions summaries and downloadable reports. Repository token policies
+  can restrict comment publishing.
+- A **cryptoscan-polyglot-report** artifact with `polyglot-findings.json`,
+  `polyglot-findings.sarif`, Markdown, and `polyglot-findings.html`, retained for
+  seven days. Download and extract it, then open the HTML to browse all findings.
+- An optional upload to **Security → Code Scanning** when GitHub enables that
+  feature for the repository. The Actions reports work without Code Scanning.
+
+Pull requests compare against their base commit; pushes compare against the
+previous commit. Both are scanned using the current scanner. Manual runs and
+runs without an available comparison show an **Inventory**. Comparison matches
+use the rule, repository-relative source path, and whitespace-normalized matched
+line; line-number shifts do not create new findings. Renames or source-text
+changes can appear as new findings.
+
+This pipeline is **report only**, because the samples deliberately contain
+vulnerabilities. Critical findings do not fail the scan job when the scanner
+writes a valid report. Scanner execution errors, invalid reports, zero scanned
+files, and JSON/SARIF inconsistencies fail the job. GitHub's optional native
+Code Scanning checks apply their own severity policy. Scanner execution uses a
+read-only token; PR feedback and Code Scanning uploads run in separate jobs.
+
+Run the same scan locally from the repository root:
+
+```powershell
+# Windows
+.\tools\cryptoscan\cryptoscan-windows-amd64.exe scan . `
+  --exclude 'tools/*,.github/*,.cryptoscan-baseline/*' `
+  --format json --pretty --no-color --output polyglot-findings.json
 ```
+
+```sh
+# Linux
+chmod +x tools/cryptoscan/cryptoscan-linux-amd64
+./tools/cryptoscan/cryptoscan-linux-amd64 scan . \
+  --exclude 'tools/*,.github/*,.cryptoscan-baseline/*' \
+  --format json --pretty --no-color --output polyglot-findings.json
+```
+
+The bundled CryptoScan reads `.cryptoscan.yaml` configuration, not the sample's
+`.pqc-scanner.toml`. The expected results above describe the sample's original
+PQC Scanner and are not assertions about CryptoScan's finding counts. See
+[scanner usage](tools/cryptoscan/README.md) for exit behavior and limitations.
 
 ## Remediation Strategy
 
