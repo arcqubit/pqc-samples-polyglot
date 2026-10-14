@@ -1,9 +1,4 @@
 # Local scanner builds and reports; retain the Linux binary used in CI.
-/tools/cryptoscan/*
-!/tools/cryptoscan/cryptoscan-linux-amd64
-!/tools/cryptoscan/checksums-linux.txt
-!/tools/cryptoscan/LICENSE
-!/tools/cryptoscan/README.md
 /tools/aqb-openscan-cli/*
 !/tools/aqb-openscan-cli/aqb-openscan-cli-linux-amd64
 !/tools/aqb-openscan-cli/checksums-linux.txt
