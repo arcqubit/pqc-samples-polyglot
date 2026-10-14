@@ -11,8 +11,8 @@ on:
       - 'lib-crypto/**'
       - 'legacy-service/**'
       - 'README.md'
-      - '.cryptoscan.yaml'
-      - 'tools/cryptoscan/**'
+      - '.aqb-openscan-cli.yaml'
+      - 'tools/aqb-openscan-cli/**'
       - '.github/workflows/cryptoscan.yml'
       - '.github/scripts/**'
   pull_request:
@@ -24,8 +24,8 @@ on:
       - 'lib-crypto/**'
       - 'legacy-service/**'
       - 'README.md'
-      - '.cryptoscan.yaml'
-      - 'tools/cryptoscan/**'
+      - '.aqb-openscan-cli.yaml'
+      - 'tools/aqb-openscan-cli/**'
       - '.github/workflows/cryptoscan.yml'
       - '.github/scripts/**'
 
@@ -74,14 +74,14 @@ jobs:
           ref: ${{ github.event.pull_request.base.sha || github.event.before }}
           path: .cryptoscan-baseline
 
-      - name: Verify Linux scanner
-        working-directory: tools/cryptoscan
+      - name: Verify Linux aqb-openscan-cli
+        working-directory: tools/aqb-openscan-cli
         run: |
           python3 -m unittest discover -s ../../.github/scripts -p 'test_*.py'
           node --test ../../.github/scripts/test_cryptoscan_pr_comment.cjs
           sha256sum --check checksums-linux.txt
-          chmod +x cryptoscan-linux-amd64
-          ./cryptoscan-linux-amd64 version
+          chmod +x aqb-openscan-cli-linux-amd64
+          ./aqb-openscan-cli-linux-amd64 version
 
       - name: Scan polyglot source and display collapsed JSON
         id: scan
@@ -90,7 +90,7 @@ jobs:
         run: |
           mkdir -p "$(dirname "$CRYPTOSCAN_REPORT")"
           set +e
-          ./tools/cryptoscan/cryptoscan-linux-amd64 scan . \
+          ./tools/aqb-openscan-cli/aqb-openscan-cli-linux-amd64 scan . \
             --exclude "tools/*,.github/*,.cryptoscan-baseline/*" \
             --format json --pretty --no-color --output "$CRYPTOSCAN_REPORT"
           scan_status=$?
@@ -106,7 +106,7 @@ jobs:
           CRYPTOSCAN_BASELINE: ${{ runner.temp }}/cryptoscan/baseline-findings.json
         run: |
           set +e
-          ./tools/cryptoscan/cryptoscan-linux-amd64 scan "$GITHUB_WORKSPACE/.cryptoscan-baseline" \
+          ./tools/aqb-openscan-cli/aqb-openscan-cli-linux-amd64 scan "$GITHUB_WORKSPACE/.cryptoscan-baseline" \
             --exclude "tools/*,.github/*,.cryptoscan-baseline/*" \
             --format json --pretty --no-color --output "$CRYPTOSCAN_BASELINE"
           scan_status=$?
@@ -135,7 +135,7 @@ jobs:
           CRYPTOSCAN_SARIF: ${{ runner.temp }}/cryptoscan/polyglot-findings.sarif
         run: |
           set +e
-          ./tools/cryptoscan/cryptoscan-linux-amd64 scan . \
+          ./tools/aqb-openscan-cli/aqb-openscan-cli-linux-amd64 scan . \
             --exclude "tools/*,.github/*,.cryptoscan-baseline/*" \
             --format sarif --no-color --output "$CRYPTOSCAN_SARIF"
           scan_status=$?

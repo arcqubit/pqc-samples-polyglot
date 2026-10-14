@@ -22,7 +22,7 @@ class SarifTests(unittest.TestCase):
             "summary": {"totalFindings": 2, "bySeverity": {"CRITICAL": 2}},
         }
         self.sarif = {"version": "2.1.0", "runs": [{
-            "tool": {"driver": {"name": "CryptoScan", "rules": [
+            "tool": {"driver": {"name": "aqb-openscan-cli", "rules": [
                 {"id": key, "name": "MD5", "shortDescription": {"text": "Weak hash"}}
                 for key in ids]}},
             "results": [{"ruleId": key, "level": "error", "message": {"text": "MD5"},
@@ -36,6 +36,7 @@ class SarifTests(unittest.TestCase):
         original = copy.deepcopy(self.sarif)
         data = prepare_sarif(self.sarif, self.report, self.root, 1)
         run = data["runs"][0]
+        self.assertEqual(run["tool"]["driver"]["name"], "aqb-openscan-cli")
         self.assertEqual(len(run["tool"]["driver"]["rules"]), 1)
         self.assertEqual(len(run["results"]), 2)
         for result in run["results"]:
@@ -98,6 +99,12 @@ class SarifTests(unittest.TestCase):
         self.assertEqual(normalized["tool"]["driver"]["rules"][0]["defaultConfiguration"],
                          {"level": "error"})
         self.assertEqual([result["level"] for result in normalized["results"]], ["error", "warning"])
+
+    def test_unexpected_sarif_tool_fails(self):
+        for name in ("CryptoScan", "other-scanner", None):
+            self.sarif["runs"][0]["tool"]["driver"]["name"] = name
+            with self.subTest(name=name), self.assertRaisesRegex(ValueError, "Unexpected SARIF tool"):
+                prepare_sarif(self.sarif, self.report, self.root, 1)
 
     def test_scanner_execution_error_fails(self):
         with self.assertRaisesRegex(ValueError, "exit code"):

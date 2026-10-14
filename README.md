@@ -79,11 +79,14 @@ This sample repository demonstrates several real-world challenges:
 ## Scanning with PQC Scanner
 
 The [CryptoScan workflow](.github/workflows/cryptoscan.yml), adapted from
-`reality-copy`, runs the bundled Linux amd64 scanner on Ubuntu 24.04. It scans
+`reality-copy`, runs the bundled `aqb-openscan-cli` Linux amd64 binary from
+`tools/aqb-openscan-cli` on Ubuntu 24.04. It scans
 the repository, including `frontend`, `backend`, `microservices`, `lib-crypto`,
 and `legacy-service`, without building or installing the sample applications.
 The scanner tools, workflow helpers, and comparison checkout are excluded.
 The Linux executable's SHA-256 checksum is verified before each run.
+The workflow, report helpers, and artifact names retain their `CryptoScan`
+naming; the SARIF tool identity is `aqb-openscan-cli`.
 
 It runs on relevant pushes to `main` and pull requests targeting `main`.
 For a manual scan, open **Actions → CryptoScan → Run workflow** in GitHub.
@@ -120,23 +123,26 @@ Run the same scan locally from the repository root:
 
 ```powershell
 # Windows
-.\tools\cryptoscan\cryptoscan-windows-amd64.exe scan . `
+.\tools\aqb-openscan-cli\aqb-openscan-cli-windows-amd64.exe scan . `
   --exclude 'tools/*,.github/*,.cryptoscan-baseline/*' `
   --format json --pretty --no-color --output polyglot-findings.json
 ```
 
 ```sh
 # Linux
-chmod +x tools/cryptoscan/cryptoscan-linux-amd64
-./tools/cryptoscan/cryptoscan-linux-amd64 scan . \
+chmod +x tools/aqb-openscan-cli/aqb-openscan-cli-linux-amd64
+./tools/aqb-openscan-cli/aqb-openscan-cli-linux-amd64 scan . \
   --exclude 'tools/*,.github/*,.cryptoscan-baseline/*' \
   --format json --pretty --no-color --output polyglot-findings.json
 ```
 
-The bundled CryptoScan reads `.cryptoscan.yaml` configuration, not the sample's
-`.pqc-scanner.toml`. The expected results above describe the sample's original
-PQC Scanner and are not assertions about CryptoScan's finding counts. See
-[scanner usage](tools/cryptoscan/README.md) for exit behavior and limitations.
+The bundled `aqb-openscan-cli` reads `.aqb-openscan-cli.yaml` configuration, not
+the sample's `.pqc-scanner.toml`. The expected results above describe the sample's
+original PQC Scanner and are not assertions about this scanner's finding counts.
+The pipeline uses the new scanner's defaults, which suppress imports,
+quantum-safe algorithms, and narrative mentions; findings can differ from the
+previous build. See [scanner usage](tools/aqb-openscan-cli/README.md) for local
+binary availability, exit behavior, and limitations.
 
 ## Remediation Strategy
 

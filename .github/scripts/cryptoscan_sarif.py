@@ -1,4 +1,4 @@
-"""Prepare CryptoScan SARIF for GitHub and verify it matches the JSON scan."""
+"""Prepare aqb-openscan-cli SARIF for GitHub and verify it matches the JSON scan."""
 
 from collections import Counter
 import copy
@@ -31,14 +31,14 @@ def prepare_sarif(sarif, report, root, exit_code):
     data = copy.deepcopy(sarif)
     runs = data.get("runs")
     if not isinstance(runs, list) or len(runs) != 1:
-        raise ValueError("Expected exactly one CryptoScan SARIF run")
+        raise ValueError("Expected exactly one aqb-openscan-cli SARIF run")
     run = runs[0]
     driver = run["tool"]["driver"]
-    if driver.get("name") != "CryptoScan":
+    if driver.get("name") != "aqb-openscan-cli":
         raise ValueError("Unexpected SARIF tool")
     results = run.get("results")
     rules = driver.get("rules")
-    # CryptoScan serializes empty slices as null; SARIF requires arrays.
+    # The scanner can serialize empty slices as null; SARIF requires arrays.
     if results is None and total == 0:
         results = []
     if rules is None and total == 0:

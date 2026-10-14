@@ -1,7 +1,8 @@
 # CryptoScan local builds
 
 CryptoScan version `1.4.0-local`, built with Go 1.26.5 for 64-bit x86 (amd64),
-with CGO disabled. The pipeline uses `cryptoscan-linux-amd64` from this directory.
+with CGO disabled. This is the previous scanner build. The pipeline now uses
+[`aqb-openscan-cli`](../aqb-openscan-cli/README.md).
 
 Windows (PowerShell, from the repository root):
 
