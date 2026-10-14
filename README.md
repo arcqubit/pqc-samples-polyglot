@@ -78,28 +78,26 @@ This sample repository demonstrates several real-world challenges:
 
 ## Scanning with PQC Scanner
 
-The [CryptoScan workflow](.github/workflows/cryptoscan.yml), adapted from
+The [AQB OpenScan workflow](.github/workflows/aqb-openscan.yml), adapted from
 `reality-copy`, runs the bundled `aqb-openscan-cli` Linux amd64 binary from
 `tools/aqb-openscan-cli` on Ubuntu 24.04. It scans
 the repository, including `frontend`, `backend`, `microservices`, `lib-crypto`,
 and `legacy-service`, without building or installing the sample applications.
 The scanner tools, workflow helpers, and comparison checkout are excluded.
 The Linux executable's SHA-256 checksum is verified before each run.
-The workflow, report helpers, and artifact names retain their `CryptoScan`
-naming; the SARIF tool identity is `aqb-openscan-cli`.
+The SARIF tool identity is `aqb-openscan-cli`.
 
 It runs on relevant pushes to `main` and pull requests targeting `main`.
-For a manual scan, open **Actions → CryptoScan → Run workflow** in GitHub.
+Pull requests, including forks, receive Actions summaries and source annotations;
+the workflow does not post PR comments.
+For a manual scan, open **Actions → AQB OpenScan → Run workflow** in GitHub.
 
 Each run provides:
 
 - An Actions summary with severity counts, source links, and expandable findings.
 - Up to ten source warning annotations for high-confidence findings at medium
   severity or above. When a baseline exists, only new findings are annotated.
-- One updating summary comment on same-repository pull requests. Fork PRs still
-  receive Actions summaries and downloadable reports. Repository token policies
-  can restrict comment publishing.
-- A **cryptoscan-polyglot-report** artifact with `polyglot-findings.json`,
+- An **aqb-openscan-polyglot-report** artifact with `polyglot-findings.json`,
   `polyglot-findings.sarif`, Markdown, and `polyglot-findings.html`, retained for
   seven days. Download and extract it, then open the HTML to browse all findings.
 - An optional upload to **Security → Code Scanning** when GitHub enables that
@@ -117,14 +115,14 @@ vulnerabilities. Critical findings do not fail the scan job when the scanner
 writes a valid report. Scanner execution errors, invalid reports, zero scanned
 files, and JSON/SARIF inconsistencies fail the job. GitHub's optional native
 Code Scanning checks apply their own severity policy. Scanner execution uses a
-read-only token; PR feedback and Code Scanning uploads run in separate jobs.
+read-only token; Code Scanning uploads run in a separate job.
 
 Run the same scan locally from the repository root:
 
 ```powershell
 # Windows
 .\tools\aqb-openscan-cli\aqb-openscan-cli-windows-amd64.exe scan . `
-  --exclude 'tools/*,.github/*,.cryptoscan-baseline/*' `
+  --exclude 'tools/*,.github/*,.aqb-openscan-baseline/*' `
   --format json --pretty --no-color --output polyglot-findings.json
 ```
 
@@ -132,7 +130,7 @@ Run the same scan locally from the repository root:
 # Linux
 chmod +x tools/aqb-openscan-cli/aqb-openscan-cli-linux-amd64
 ./tools/aqb-openscan-cli/aqb-openscan-cli-linux-amd64 scan . \
-  --exclude 'tools/*,.github/*,.cryptoscan-baseline/*' \
+  --exclude 'tools/*,.github/*,.aqb-openscan-baseline/*' \
   --format json --pretty --no-color --output polyglot-findings.json
 ```
 

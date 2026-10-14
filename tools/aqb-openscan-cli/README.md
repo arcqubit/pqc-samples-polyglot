@@ -23,7 +23,7 @@ Run from the workspace root on Windows x64:
 ```powershell
 .\tools\aqb-openscan-cli\aqb-openscan-cli-windows-amd64.exe version
 .\tools\aqb-openscan-cli\aqb-openscan-cli-windows-amd64.exe scan . `
-  --exclude 'tools/*,.github/*,.cryptoscan-baseline/*' `
+  --exclude 'tools/*,.github/*,.aqb-openscan-baseline/*' `
   --format json --pretty --no-color --output polyglot-findings.json
 ```
 
@@ -33,7 +33,7 @@ Run from the workspace root on Linux x64:
 chmod +x ./tools/aqb-openscan-cli/aqb-openscan-cli-linux-amd64
 ./tools/aqb-openscan-cli/aqb-openscan-cli-linux-amd64 version
 ./tools/aqb-openscan-cli/aqb-openscan-cli-linux-amd64 scan . \
-  --exclude 'tools/*,.github/*,.cryptoscan-baseline/*' \
+  --exclude 'tools/*,.github/*,.aqb-openscan-baseline/*' \
   --format json --pretty --no-color --output polyglot-findings.json
 ```
 
@@ -63,10 +63,11 @@ The x64 binaries ran sample scans on Windows and Linux (WSL), each reporting
 critical findings, as expected. ARM64 targets were cross-compiled and their
 embedded platform metadata verified; they were not run on ARM64 hardware.
 
-Pipeline migration validation: the Linux amd64 binary passed checksum
+Pipeline validation: the Linux amd64 binary passed checksum
 verification and the workflow's current-source, comparison-source, and SARIF
 steps against a clean copy of this repository. It produced 20 findings across
-all five sample components, with matching JSON/SARIF output and all five report
-artifacts. Both comparison and inventory feedback passed. The 25 Python helper
-tests passed on Linux and Windows, and the four PR publisher tests passed on
-Windows with Node.js.
+all five sample components, with matching JSON/SARIF output and all four report
+artifacts (JSON, SARIF, Markdown, and HTML). Both comparison and inventory
+feedback passed. The 25 Python helper tests passed on Linux and Windows.
+The workflow publishes Actions summaries and source annotations without
+posting PR comments.

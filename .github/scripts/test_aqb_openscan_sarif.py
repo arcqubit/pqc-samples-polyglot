@@ -3,7 +3,7 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from cryptoscan_sarif import prepare_sarif
+from aqb_openscan_sarif import prepare_sarif
 
 
 class SarifTests(unittest.TestCase):
@@ -43,7 +43,7 @@ class SarifTests(unittest.TestCase):
             self.assertEqual(result["ruleId"], "HASH-MD5-001")
             self.assertEqual(result["locations"][0]["physicalLocation"]["artifactLocation"]["uri"],
                              "src/crypto%20example.go")
-            self.assertIn("cryptoscanOccurrenceId", result["properties"])
+            self.assertIn("aqbOpenscanOccurrenceId", result["properties"])
         self.assertEqual(self.sarif, original)
 
     def test_dependency_rule_id_is_preserved(self):

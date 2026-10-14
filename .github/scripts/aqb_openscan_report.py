@@ -1,4 +1,4 @@
-"""Display and validate a CryptoScan report for the report-only sample pipeline."""
+"""Display and validate an AQB OpenScan report for the report-only sample pipeline."""
 
 import json
 from pathlib import Path
@@ -37,7 +37,7 @@ def validate_report(report, exit_code):
 
 def display_json(raw):
     token = uuid.uuid4().hex
-    print("::group::CryptoScan JSON results", flush=True)
+    print("::group::AQB OpenScan JSON results", flush=True)
     print(f"::stop-commands::{token}", flush=True)
     try:
         print(raw, flush=True)
@@ -56,7 +56,7 @@ def main():
         files, total, counts = validate_report(json.loads(raw), exit_code)
         print(f"Scan complete: {files} files, {total} findings (report only).")
     except (OSError, ValueError, KeyError, IndexError) as error:
-        print(f"CryptoScan pipeline failed: {error}", file=sys.stderr)
+        print(f"AQB OpenScan pipeline failed: {error}", file=sys.stderr)
         return 1
     return 0
 

@@ -4,7 +4,7 @@ import io
 import json
 import unittest
 
-from cryptoscan_report import display_json, validate_report
+from aqb_openscan_report import display_json, validate_report
 
 
 class ReportTests(unittest.TestCase):
@@ -55,7 +55,7 @@ class ReportTests(unittest.TestCase):
         with contextlib.redirect_stdout(output):
             display_json(raw)
         lines = output.getvalue().splitlines()
-        self.assertEqual(lines[0], "::group::CryptoScan JSON results")
+        self.assertEqual(lines[0], "::group::AQB OpenScan JSON results")
         token = lines[1].removeprefix("::stop-commands::")
         self.assertEqual("\n".join(lines[2:-2]), raw)
         self.assertEqual(lines[-2:], [f"::{token}::", "::endgroup::"])

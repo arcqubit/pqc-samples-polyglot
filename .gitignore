@@ -8,7 +8,7 @@
 !/tools/aqb-openscan-cli/aqb-openscan-cli-linux-amd64
 !/tools/aqb-openscan-cli/checksums-linux.txt
 !/tools/aqb-openscan-cli/README.md
-/.cryptoscan-baseline/
+/.aqb-openscan-baseline/
 /reports/
 /scan-results/
 /findings.json

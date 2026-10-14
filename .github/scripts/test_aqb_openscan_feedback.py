@@ -5,7 +5,7 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from cryptoscan_feedback import (classify_findings, emit_annotations, github_links,
+from aqb_openscan_feedback import (classify_findings, emit_annotations, github_links,
                                 normalize_findings, render_html, render_markdown)
 
 
@@ -106,11 +106,9 @@ class FeedbackTests(unittest.TestCase):
         current = normalize_findings(self.report, self.root)
         findings, _ = classify_findings(current * 210)
         summary = render_markdown(self.report, findings, self.source_url, self.run_url)
-        comment = render_markdown(self.report, findings, self.source_url, self.run_url, pr=True)
         page = render_html(self.report, findings, self.source_url)
         self.assertIn("<details>", summary)
         self.assertIn("showing 200 of 210", summary)
-        self.assertNotIn("Finding inventory", comment)
         self.assertEqual(page.count("<details>"), 210)
         self.assertIn("not labelled new or fixed", summary)
 

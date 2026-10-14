@@ -1,4 +1,4 @@
-"""Publish useful CryptoScan feedback without requiring GitHub Code Security."""
+"""Publish useful AQB OpenScan feedback without requiring GitHub Code Security."""
 
 import argparse
 from collections import Counter
@@ -11,12 +11,11 @@ import re
 import sys
 from urllib.parse import quote
 
-from cryptoscan_report import SEVERITIES, validate_report
-from cryptoscan_sarif import repository_path
+from aqb_openscan_report import SEVERITIES, validate_report
+from aqb_openscan_sarif import repository_path
 
 
 SEVERITY_NAMES = tuple(reversed(SEVERITIES))
-PR_MARKER = "<!-- cryptoscan-pr-summary -->"
 ANNOTATION_LIMIT = 10
 DETAIL_LIMIT = 10
 INVENTORY_LIMIT = 200
@@ -120,12 +119,11 @@ def source_link(finding, source_url):
 
 
 def render_markdown(report, findings, source_url, run_url, baseline_label=None,
-                    removed=0, pr=False):
+                    removed=0):
     states = Counter(f["state"] for f in findings)
     ordered = sorted(findings, key=priority)
     candidate_count = sum(actionable(f) for f in findings)
-    lines = [PR_MARKER] if pr else []
-    lines += ["## CryptoScan", "",
+    lines = ["## AQB OpenScan", "",
               f"Scanned **{report['filesScanned']} files** in the polyglot repository: "
               f"**{len(findings)} findings**, including **{candidate_count} "
               "high-confidence findings at medium severity or above**.", ""]
@@ -149,7 +147,7 @@ def render_markdown(report, findings, source_url, run_url, baseline_label=None,
               "contextual review; confidence is the scanner's estimate. Coverage and "
               "finding counts are not a security or quantum-readiness certification.", "",
               f"[Open this Actions run and download reports]({run_url}#artifacts): "
-              "**cryptoscan-polyglot-report** contains JSON, SARIF, and a browsable "
+              "**aqb-openscan-polyglot-report** contains JSON, SARIF, and a browsable "
               "`polyglot-findings.html` report, retained for seven days. "
               "GitHub Code Security is not required for this report.", ""]
     annotation_count = min(ANNOTATION_LIMIT, sum(actionable(f) and f['state'] != 'Existing'
@@ -173,7 +171,7 @@ def render_markdown(report, findings, source_url, run_url, baseline_label=None,
                           finding['remediation'] or "Review the code and confirm whether "
                           "the detected usage is relevant.", 600), ""]
         lines += ["</details>", ""]
-    if ordered and not pr:
+    if ordered:
         lines += ["<details>", f"<summary>Finding inventory "
                   f"(showing {min(INVENTORY_LIMIT, len(ordered))} of {len(ordered)})</summary>", "",
                   "| State | Severity | Confidence | Finding | Source |",
@@ -196,11 +194,11 @@ def render_html(report, findings, source_url, baseline_label=None, removed=0):
                   if baseline_label else "Inventory scan; no comparison baseline available.")
     parts = ["<!doctype html><html lang='en'><meta charset='utf-8'>",
              "<meta name='viewport' content='width=device-width, initial-scale=1'>",
-             "<title>CryptoScan report</title><style>body{font:16px system-ui;max-width:1100px;"
+             "<title>AQB OpenScan report</title><style>body{font:16px system-ui;max-width:1100px;"
              "margin:40px auto;padding:0 20px;color:#18212c}details{border:1px solid #ccd3db;"
              "border-radius:6px;padding:12px;margin:12px 0}summary{cursor:pointer}"
              "pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f1f4f8;padding:12px}"
-             "a{color:#075da8}p{line-height:1.5}</style><body><h1>CryptoScan</h1>",
+             "a{color:#075da8}p{line-height:1.5}</style><body><h1>AQB OpenScan</h1>",
              f"<p>Scanned <strong>{report['filesScanned']} files</strong> in the polyglot repository: "
              f"<strong>{len(findings)} findings</strong>.</p><p>{comparison}</p>",
              "<p>Report only. Pattern matches require contextual review. This inventory "
@@ -235,7 +233,7 @@ def emit_annotations(findings):
     for finding in selected:
         message = (f"{finding['type']} ({finding['confidence'].lower()} confidence). "
                    f"Review in context. {finding['remediation']}")[:1000]
-        title = f"CryptoScan: {finding['severity'].title()} / {finding['rule']}"
+        title = f"AQB OpenScan: {finding['severity'].title()} / {finding['rule']}"
         print(f"::warning file={command_escape(finding['file'], True)},"
               f"line={finding['line']},col={finding['column']},"
               f"title={command_escape(title, True)}::{command_escape(message)}", flush=True)
@@ -263,27 +261,25 @@ def main():
             label = f"commit {args.baseline_sha[:12]}"
         findings, removed = classify_findings(findings, baseline)
         source_url, run_url = github_links(os.environ["GITHUB_REPOSITORY"],
-            os.environ["CRYPTOSCAN_HEAD_SHA"], os.environ["GITHUB_RUN_ID"],
+            os.environ["AQB_OPENSCAN_HEAD_SHA"], os.environ["GITHUB_RUN_ID"],
             os.environ.get("GITHUB_SERVER_URL", "https://github.com"))
-        source_repository = os.environ.get("CRYPTOSCAN_SOURCE_REPOSITORY")
+        source_repository = os.environ.get("AQB_OPENSCAN_SOURCE_REPOSITORY")
         if source_repository:
             source_url, _ = github_links(source_repository,
-                os.environ["CRYPTOSCAN_HEAD_SHA"], os.environ["GITHUB_RUN_ID"],
+                os.environ["AQB_OPENSCAN_HEAD_SHA"], os.environ["GITHUB_RUN_ID"],
                 os.environ.get("GITHUB_SERVER_URL", "https://github.com"))
         summary = render_markdown(report, findings, source_url, run_url, label, removed)
-        comment = render_markdown(report, findings, source_url, run_url, label, removed, pr=True)
-        if len(summary.encode()) > 900_000 or len(comment.encode()) > 60_000:
+        if len(summary.encode()) > 900_000:
             raise ValueError("Feedback exceeds GitHub size limits")
         path.with_suffix(".md").write_text(summary, encoding="utf-8")
         path.with_suffix(".html").write_text(render_html(
             report, findings, source_url, label, removed), encoding="utf-8")
-        path.with_name("pr-summary.md").write_text(comment, encoding="utf-8")
         with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as output:
             output.write(summary)
         count = emit_annotations(findings)
-        print(f"CryptoScan feedback ready: {len(findings)} findings, {count} annotations.")
+        print(f"AQB OpenScan feedback ready: {len(findings)} findings, {count} annotations.")
     except (OSError, ValueError, KeyError, TypeError) as error:
-        print(f"CryptoScan feedback failed: {error}", file=sys.stderr)
+        print(f"AQB OpenScan feedback failed: {error}", file=sys.stderr)
         return 1
     return 0
 

@@ -8,7 +8,7 @@ import re
 import sys
 from urllib.parse import quote, unquote
 
-from cryptoscan_report import validate_report
+from aqb_openscan_report import validate_report
 
 
 def repository_path(value, root):
@@ -84,7 +84,7 @@ def prepare_sarif(sarif, report, root, exit_code):
                 definition["defaultConfiguration"] = existing_config
         stable_rules[stable] = definition
         result["ruleId"] = stable
-        result.setdefault("properties", {})["cryptoscanOccurrenceId"] = occurrence
+        result.setdefault("properties", {})["aqbOpenscanOccurrenceId"] = occurrence
     if expected != observed:
         raise ValueError("SARIF findings or source locations differ from the JSON report")
     run["results"] = results
@@ -105,7 +105,7 @@ def main():
         run = data["runs"][0]
         print(f"SARIF ready: {len(run['results'])} results, {len(run['tool']['driver']['rules'])} rules.")
     except (OSError, ValueError, KeyError, IndexError, TypeError) as error:
-        print(f"CryptoScan SARIF failed: {error}", file=sys.stderr)
+        print(f"AQB OpenScan SARIF failed: {error}", file=sys.stderr)
         return 1
     return 0
 

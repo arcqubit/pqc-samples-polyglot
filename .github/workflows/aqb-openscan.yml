@@ -1,4 +1,4 @@
-name: CryptoScan
+name: AQB OpenScan
 
 on:
   workflow_dispatch:
@@ -13,7 +13,7 @@ on:
       - 'README.md'
       - '.aqb-openscan-cli.yaml'
       - 'tools/aqb-openscan-cli/**'
-      - '.github/workflows/cryptoscan.yml'
+      - '.github/workflows/aqb-openscan.yml'
       - '.github/scripts/**'
   pull_request:
     branches: [main]
@@ -26,7 +26,7 @@ on:
       - 'README.md'
       - '.aqb-openscan-cli.yaml'
       - 'tools/aqb-openscan-cli/**'
-      - '.github/workflows/cryptoscan.yml'
+      - '.github/workflows/aqb-openscan.yml'
       - '.github/scripts/**'
 
 permissions:
@@ -72,13 +72,12 @@ jobs:
         with:
           persist-credentials: false
           ref: ${{ github.event.pull_request.base.sha || github.event.before }}
-          path: .cryptoscan-baseline
+          path: .aqb-openscan-baseline
 
       - name: Verify Linux aqb-openscan-cli
         working-directory: tools/aqb-openscan-cli
         run: |
           python3 -m unittest discover -s ../../.github/scripts -p 'test_*.py'
-          node --test ../../.github/scripts/test_cryptoscan_pr_comment.cjs
           sha256sum --check checksums-linux.txt
           chmod +x aqb-openscan-cli-linux-amd64
           ./aqb-openscan-cli-linux-amd64 version
@@ -86,124 +85,78 @@ jobs:
       - name: Scan polyglot source and display collapsed JSON
         id: scan
         env:
-          CRYPTOSCAN_REPORT: ${{ runner.temp }}/cryptoscan/polyglot-findings.json
+          AQB_OPENSCAN_REPORT: ${{ runner.temp }}/aqb-openscan/polyglot-findings.json
         run: |
-          mkdir -p "$(dirname "$CRYPTOSCAN_REPORT")"
+          mkdir -p "$(dirname "$AQB_OPENSCAN_REPORT")"
           set +e
           ./tools/aqb-openscan-cli/aqb-openscan-cli-linux-amd64 scan . \
-            --exclude "tools/*,.github/*,.cryptoscan-baseline/*" \
-            --format json --pretty --no-color --output "$CRYPTOSCAN_REPORT"
+            --exclude "tools/*,.github/*,.aqb-openscan-baseline/*" \
+            --format json --pretty --no-color --output "$AQB_OPENSCAN_REPORT"
           scan_status=$?
           set -e
-          if [[ -f "$CRYPTOSCAN_REPORT" ]]; then
+          if [[ -f "$AQB_OPENSCAN_REPORT" ]]; then
             echo "report_exists=true" >> "$GITHUB_OUTPUT"
           fi
-          python3 .github/scripts/cryptoscan_report.py "$CRYPTOSCAN_REPORT" "$scan_status"
+          python3 .github/scripts/aqb_openscan_report.py "$AQB_OPENSCAN_REPORT" "$scan_status"
 
       - name: Scan comparison source
         if: steps.baseline.outputs.available == 'true'
         env:
-          CRYPTOSCAN_BASELINE: ${{ runner.temp }}/cryptoscan/baseline-findings.json
+          AQB_OPENSCAN_BASELINE: ${{ runner.temp }}/aqb-openscan/baseline-findings.json
         run: |
           set +e
-          ./tools/aqb-openscan-cli/aqb-openscan-cli-linux-amd64 scan "$GITHUB_WORKSPACE/.cryptoscan-baseline" \
-            --exclude "tools/*,.github/*,.cryptoscan-baseline/*" \
-            --format json --pretty --no-color --output "$CRYPTOSCAN_BASELINE"
+          ./tools/aqb-openscan-cli/aqb-openscan-cli-linux-amd64 scan "$GITHUB_WORKSPACE/.aqb-openscan-baseline" \
+            --exclude "tools/*,.github/*,.aqb-openscan-baseline/*" \
+            --format json --pretty --no-color --output "$AQB_OPENSCAN_BASELINE"
           scan_status=$?
           set -e
-          python3 .github/scripts/cryptoscan_report.py "$CRYPTOSCAN_BASELINE" "$scan_status" --quiet
+          python3 .github/scripts/aqb_openscan_report.py "$AQB_OPENSCAN_BASELINE" "$scan_status" --quiet
 
       - name: Publish Actions summary and source annotations
         env:
-          CRYPTOSCAN_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-          CRYPTOSCAN_SOURCE_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
+          AQB_OPENSCAN_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          AQB_OPENSCAN_SOURCE_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
           BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
           BASE_AVAILABLE: ${{ steps.baseline.outputs.available }}
         run: |
           baseline_args=()
           if [[ "$BASE_AVAILABLE" == 'true' ]]; then
-            baseline_args=(--baseline-report "$RUNNER_TEMP/cryptoscan/baseline-findings.json"
-              --baseline-root "$GITHUB_WORKSPACE/.cryptoscan-baseline" --baseline-sha "$BASE_SHA")
+            baseline_args=(--baseline-report "$RUNNER_TEMP/aqb-openscan/baseline-findings.json"
+              --baseline-root "$GITHUB_WORKSPACE/.aqb-openscan-baseline" --baseline-sha "$BASE_SHA")
           fi
-          python3 .github/scripts/cryptoscan_feedback.py \
-            "$RUNNER_TEMP/cryptoscan/polyglot-findings.json" "$GITHUB_WORKSPACE" "${baseline_args[@]}"
+          python3 .github/scripts/aqb_openscan_feedback.py \
+            "$RUNNER_TEMP/aqb-openscan/polyglot-findings.json" "$GITHUB_WORKSPACE" "${baseline_args[@]}"
 
       - name: Generate GitHub-ready SARIF
         id: sarif
         env:
-          CRYPTOSCAN_REPORT: ${{ runner.temp }}/cryptoscan/polyglot-findings.json
-          CRYPTOSCAN_SARIF: ${{ runner.temp }}/cryptoscan/polyglot-findings.sarif
+          AQB_OPENSCAN_REPORT: ${{ runner.temp }}/aqb-openscan/polyglot-findings.json
+          AQB_OPENSCAN_SARIF: ${{ runner.temp }}/aqb-openscan/polyglot-findings.sarif
         run: |
           set +e
           ./tools/aqb-openscan-cli/aqb-openscan-cli-linux-amd64 scan . \
-            --exclude "tools/*,.github/*,.cryptoscan-baseline/*" \
-            --format sarif --no-color --output "$CRYPTOSCAN_SARIF"
+            --exclude "tools/*,.github/*,.aqb-openscan-baseline/*" \
+            --format sarif --no-color --output "$AQB_OPENSCAN_SARIF"
           scan_status=$?
           set -e
-          if [[ -f "$CRYPTOSCAN_SARIF" ]]; then
+          if [[ -f "$AQB_OPENSCAN_SARIF" ]]; then
             echo "report_exists=true" >> "$GITHUB_OUTPUT"
           fi
-          python3 .github/scripts/cryptoscan_sarif.py \
-            "$CRYPTOSCAN_SARIF" "$CRYPTOSCAN_REPORT" "$GITHUB_WORKSPACE" "$scan_status"
+          python3 .github/scripts/aqb_openscan_sarif.py \
+            "$AQB_OPENSCAN_SARIF" "$AQB_OPENSCAN_REPORT" "$GITHUB_WORKSPACE" "$scan_status"
 
-      - name: Upload CryptoScan reports
+      - name: Upload AQB OpenScan reports
         if: ${{ always() && (steps.scan.outputs.report_exists == 'true' || steps.sarif.outputs.report_exists == 'true') }}
         uses: actions/upload-artifact@v7
         with:
-          name: cryptoscan-polyglot-report
+          name: aqb-openscan-polyglot-report
           path: |
-            ${{ runner.temp }}/cryptoscan/polyglot-findings.json
-            ${{ runner.temp }}/cryptoscan/polyglot-findings.sarif
-            ${{ runner.temp }}/cryptoscan/polyglot-findings.md
-            ${{ runner.temp }}/cryptoscan/polyglot-findings.html
-            ${{ runner.temp }}/cryptoscan/pr-summary.md
+            ${{ runner.temp }}/aqb-openscan/polyglot-findings.json
+            ${{ runner.temp }}/aqb-openscan/polyglot-findings.sarif
+            ${{ runner.temp }}/aqb-openscan/polyglot-findings.md
+            ${{ runner.temp }}/aqb-openscan/polyglot-findings.html
           retention-days: 7
           if-no-files-found: error
-
-  pr-feedback:
-    name: Update CryptoScan PR summary
-    needs: scan
-    # Fork PRs keep the read-only Actions summary and source annotations. Never
-    # use pull_request_target to execute the scanner with a write token.
-    if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository }}
-    runs-on: ubuntu-24.04
-    timeout-minutes: 5
-    concurrency:
-      group: cryptoscan-comment-${{ github.event.pull_request.number }}
-      cancel-in-progress: false
-    permissions:
-      contents: read
-      actions: read
-      pull-requests: write
-    steps:
-      - name: Check out feedback publisher
-        uses: actions/checkout@v7
-        with:
-          persist-credentials: false
-          ref: ${{ github.event.pull_request.head.sha }}
-
-      - name: Download scan reports
-        uses: actions/download-artifact@v8
-        with:
-          name: cryptoscan-polyglot-report
-          path: ${{ runner.temp }}/cryptoscan
-
-      - name: Update one PR comment
-        uses: actions/github-script@v9
-        env:
-          CRYPTOSCAN_PR_SUMMARY: ${{ runner.temp }}/cryptoscan/pr-summary.md
-        with:
-          script: |
-            const publish = require('./.github/scripts/cryptoscan_pr_comment.cjs');
-            const fs = require('node:fs');
-            try {
-              await publish({ github, context, core,
-                body: fs.readFileSync(process.env.CRYPTOSCAN_PR_SUMMARY, 'utf8') });
-            } catch (error) {
-              if (error.status !== 403) throw error;
-              core.info('Repository token policy prevented PR feedback; Actions reports remain available.');
-              await core.summary.addRaw('CryptoScan PR comment could not be published because GitHub denied access. Review findings in the **Scan polyglot source on Linux** summary and reports. Repository or organization token policies may restrict PR writes.\n').write();
-            }
 
   code-scanning:
     name: Optional GitHub Code Scanning
@@ -234,7 +187,7 @@ jobs:
                 core.setOutput('enabled', 'false');
                 await core.summary
                   .addRaw('<details><summary>Optional GitHub Code Scanning integration</summary>\n\n')
-                  .addRaw('Code Scanning is unavailable for this repository. CryptoScan results are available in the scan job summary, prioritized Actions annotations, and downloadable JSON, SARIF, and HTML reports.\n\n')
+                  .addRaw('Code Scanning is unavailable for this repository. AQB OpenScan results are available in the scan job summary, prioritized Actions annotations, and downloadable JSON, SARIF, and HTML reports.\n\n')
                   .addRaw('Eligible repositories also receive native alerts under Security → Code Scanning. Private repositories require GitHub Code Security for that additional destination.\n\n</details>\n')
                   .write();
               } else {
@@ -253,17 +206,17 @@ jobs:
         if: steps.availability.outputs.enabled == 'true'
         uses: actions/download-artifact@v8
         with:
-          name: cryptoscan-polyglot-report
-          path: ${{ runner.temp }}/cryptoscan
+          name: aqb-openscan-polyglot-report
+          path: ${{ runner.temp }}/aqb-openscan
 
       - name: Upload SARIF to Code Scanning
         if: steps.availability.outputs.enabled == 'true'
         id: upload
         uses: github/codeql-action/upload-sarif@v4
         with:
-          sarif_file: ${{ runner.temp }}/cryptoscan/polyglot-findings.sarif
+          sarif_file: ${{ runner.temp }}/aqb-openscan/polyglot-findings.sarif
           checkout_path: ${{ github.workspace }}
-          category: cryptoscan-polyglot
+          category: aqb-openscan-polyglot
           wait-for-processing: true
 
       - name: Summarize Code Scanning upload
@@ -278,7 +231,7 @@ jobs:
             await core.summary
               .addHeading('GitHub Code Scanning upload')
               .addRaw(uploaded
-                ? `**Uploaded and processed.** View [CryptoScan alerts](${alerts}) under **Security → Code Scanning**.\n\n`
+                ? `**Uploaded and processed.** View [AQB OpenScan alerts](${alerts}) under **Security → Code Scanning**.\n\n`
                 : '**Upload did not complete.** Inspect this job for the error; downloadable JSON and SARIF reports remain available.\n\n')
-              .addRaw('This is an additional destination; CryptoScan feedback is also available in Actions and pull requests without Code Security. The upload action computes alert fingerprints from the checked-out source. Native Code Scanning checks use their own severity policy.\n')
+              .addRaw('This is an additional destination; AQB OpenScan feedback is also available in Actions summaries, source annotations, and downloadable reports without Code Security. The upload action computes alert fingerprints from the checked-out source. Native Code Scanning checks use their own severity policy.\n')
               .write();
